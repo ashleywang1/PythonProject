@@ -43,7 +43,7 @@ def update_text(screen, message, size = 10):
     textRect.centery = textY
     screen.blit(text, textRect)
 
-def new_game(size = input("Please enter a number between 5 and 20: ")):
+def new_game(size = 10):
     """
     Sets up all necessary components to start a new game
     of Langton's Ant.
@@ -109,3 +109,69 @@ def main_loop(screen, board, moveCount, clock, stop, pause):
             # ------------------------
 
     pygame.quit() # closes things, keeps idle from freezing
+
+
+
+
+class Board:
+    def __init__(self, size):
+
+        self.size = size
+        
+        #---Initializes Squares (the "Board")---#
+        self.squares = pygame.sprite.RenderPlain()
+        self.boardSquares = []
+        
+        #---Populate boardSquares with Squares---#
+        
+        new = []
+        for i in range (0, size):
+            for j in range (0, size):
+                s = Square(i, j, white)
+                new.append(s)
+                self.squares.add(s)
+            self.boardSquares.append(new)
+            new = []
+        
+        
+    def get_square(self, x, y):
+        """
+        Given an (x, y) pair, return the Square at that location
+        """
+        return self.boardSquares[y][x]
+
+
+
+class Square(pygame.sprite.Sprite):
+    def __init__(self, row, col, color):
+        pygame.sprite.Sprite.__init__(self)
+        self.row = row
+        self.col = col
+        self.image = pygame.Surface([WIDTH, HEIGHT])
+        self.image.fill(color)
+        self.rect = self.image.get_rect() # gets a rect object with width and height specified above
+                                            # a rect is a pygame object for handling rectangles
+        self.rect.x = get_col_left_loc(col)
+        self.rect.y = get_row_top_loc(row)
+        self.color = white   
+
+    def get_rect_from_square(self):
+        """
+        Returns the rect object that belongs to this Square
+        """
+        return self.rect
+
+    def flip_color(self):
+        """
+        Flips the color of the square (white -> black or 
+        black -> white)
+        """
+        a = self.color
+        if a==black:
+            self.color = white
+            self.image.fill(self.color)
+        elif a ==white:
+            self.color = black
+            self.image.fill(self.color)
+
+new_game(3)
