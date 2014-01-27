@@ -3,8 +3,8 @@ import tests as T
 from random import randrange
 
 ### Global Variables
-WIDTH = 75  # this is the width of an individual square
-HEIGHT = 75 # this is the height of an individual square
+WIDTH = 50  # this is the width of an individual square
+HEIGHT = 50 # this is the height of an individual square
 
 # RGB Color definitions
 black = (0, 0, 0)
@@ -48,6 +48,8 @@ def new_game(size = 10):
     Sets up all necessary components to start a new game
     of Langton's Ant.
     """
+    size = 10
+    
     pygame.init() # initialize all imported pygame modules
 
     window_size = [size * WIDTH + 200, size * HEIGHT + 20] # width, height
@@ -79,8 +81,8 @@ def draw_grid(screen, size):
     
 # Main program Loop: (called by new_game)
 def main_loop(screen, board, moveCount, clock, stop, pause):
-    #board.squares.draw(screen) # draw Sprites (Squares)    draw_grid(screen, board.size)
-    #board.theAnt.draw(screen) # draw ant Sprite
+    board.squares.draw(screen) # draw Sprites (Squares)    draw_grid(screen, board.size)
+    board.theHero.draw(screen) # draw ant Sprite
     pygame.display.flip() # update screen
     
     if stop == True:
@@ -92,20 +94,53 @@ def main_loop(screen, board, moveCount, clock, stop, pause):
             if event.type == pygame.QUIT: #user clicks close
                 stop = True
                 pygame.quit()
-            elif event.type==pygame.KEYDOWN:
-                if event.key==pygame.K_p:
-                    if pause:
-                        pause = False
-                    else:
-                        pause = True
+##            elif event.type==pygame.KEYDOWN:
+##                if event.key==pygame.K_p:
+##                    print "key press!!"
+##                    if pause:
+##                        pause = False
+##                    else:
+##                        pause = True
 
         if stop == False and pause == False: 
             #game here
 
             board.squares.draw(screen)
+            board.theHero.draw(screen)
             
             pygame.display.flip() # update screen
-            clock.tick(5)
+            clock.tick(10)
+
+            events = pygame.event.get()
+            
+            for event in events:
+                if event.type == pygame.QUIT: #user clicks close
+                    stop = True
+                    pygame.quit()
+##                if event.type==pygame.KEYDOWN and event.key==275:
+##                    #make the person go right
+##                    print "person going right!!!!"
+##                if event.type==pygame.KEYUP:
+##                    print "stopped"
+
+            #Sense mouse position
+            mouse = pygame.mouse.get_pos()
+            x = mouse[0]
+            y = mouse[1]
+
+            hero = board.person
+            heroPosition = hero.rect
+
+            if x > heroPosition.x+25:
+                #"person moving to the right"
+                hero.move_right(x)
+                
+            elif x < heroPosition.x+25:
+                #board.person.move_left(x)
+                hero.move_left(x)
+            else:
+                print "person stopped"
+                    
             
             moveCount += 1
             # ------------------------
@@ -134,12 +169,21 @@ class Board:
                 self.squares.add(s)
             self.boardSquares.append(new)
             new = []
+
+        #---Initialize the Person ---#
         
+        self.person = Person(self, size/2, size-1, 50)
+        
+        self.theHero = pygame.sprite.RenderPlain()
+        self.theHero.add(self.person)
+        print "hello"
         
     def get_square(self, x, y):
         """
         Given an (x, y) pair, return the Square at that location
         """
+        print x
+        print y
         return self.boardSquares[y][x]
 
 
@@ -176,4 +220,31 @@ class Square(pygame.sprite.Sprite):
             self.color = black
             self.image.fill(self.color)
 
-new_game(3)
+
+class Person (pygame.sprite.Sprite):
+    def __init__(self, board, col, row, size):
+        pygame.sprite.Sprite.__init__(self)
+        self.col = col
+        self.row = row
+        self.board = board
+        #this needs to be changed
+        self.rect = pygame.Rect(250, 450, size, size)
+        
+        self.image = self.image = pygame.image.load("girlCharacter.png").convert()
+
+
+    def move_right(self, destination):
+        """Move the person to the right"""
+        velocity = (destination - self.rect.x-25)/3
+        x = self.rect.x + velocity
+        y = self.rect.y
+        self.rect = pygame.Rect(x, y, 50, 50)
+        
+    def move_left(self, destination):
+        """Move the person to the right"""
+        velocity = (self.rect.x+25 - destination)/3
+        x = self.rect.x - velocity
+        y = self.rect.y
+        self.rect = pygame.Rect(x, y, 50, 50)
+ 
+new_game(10)
