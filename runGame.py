@@ -53,7 +53,7 @@ def new_game(size = 10):
     window_size = [size * WIDTH + 200, size * HEIGHT + 20] # width, height
     screen = pygame.display.set_mode(window_size, pygame.RESIZABLE)
 
-    pygame.display.set_caption("Langton's Ant") # caption sets title of Window 
+    pygame.display.set_caption("Gravity") # caption sets title of Window 
 
     board = Board(size)
 
@@ -101,6 +101,8 @@ def main_loop(screen, board, moveCount, clock, stop, pause):
 
         if stop == False and pause == False: 
             #game here
+
+            board.squares.draw(screen)
             
             pygame.display.flip() # update screen
             clock.tick(5)
