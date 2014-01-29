@@ -1,5 +1,6 @@
 import pygame, sys, random
 
+black = (0, 0, 0)
 white = (255, 255, 255)
 green = (0, 255, 0)
 red = (255, 0, 0)
@@ -36,7 +37,9 @@ def main_loop(screen, board):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-        board.makeItems()
+        board.checkHits()
+        if s % 3 == 0:
+            board.makeItems(5)
         for i in items:
             screen.blit(background, i.pos, i.pos)
         for i in items:
@@ -87,27 +90,40 @@ class Board:
         self.theHero = pygame.sprite.RenderPlain()
         self.theHero.add(self.person)
 
-    def makeItems(self):
-            i = Item(random.choice(types), random.randint(0, self.size[0] - 20), 5)
+    def makeItems(self, prob):
+            t = green
+            if random.randint(0, prob) == prob:
+                t = red
+            i = Item(t, random.randint(0, self.size[0] - 28), 5)
             self.items.add(i)
+
+    def checkHits(self):
+        pygame.sprite.groupcollide(self.items, self.theHero, True, False)
         
 
 class Item(pygame.sprite.Sprite):
     def __init__(self, color, x, speed):
         pygame.sprite.Sprite.__init__(self)
         
-        self.image = pygame.Surface([20, 20])
+        self.image = pygame.Surface([28, 28])
         self.image.fill(color)
         
         self.color = color    #green is good, red is bad
         self.x = x
         self.speed = speed
         self.pos = self.image.get_rect().move(x, 0)
+        self.rect = self.pos
+
+        self.set_pic()
 
     def move(self):
         self.pos = self.pos.move(0, self.speed)
-        if self.pos.top <= 400:
-            return False
+        self.rect = self.pos
+
+    def set_pic(self):
+        if self.color == green:
+            self.image = pygame.image.load("goldcoin.png").convert()
+            self.image.set_colorkey(black)
 
 class Person (pygame.sprite.Sprite):
     def __init__(self, board, col, row, size):
@@ -119,7 +135,7 @@ class Person (pygame.sprite.Sprite):
         self.rect = pygame.Rect(col, row, size, size)
         print col, row
         
-        self.image = self.image = pygame.image.load("girlCharacter.png").convert()
+        self.image = self.image = pygame.image.load("40x40girl.jpg").convert()
 
 
     def move_right(self, destination, size):
