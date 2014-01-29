@@ -1,6 +1,4 @@
-import pygame, sys
-import tests as T
-from random import randrange
+import pygame
 
 ### Global Variables
 WIDTH = 50  # this is the width of an individual square
@@ -133,11 +131,11 @@ def main_loop(screen, board, moveCount, clock, stop, pause):
 
             if x > heroPosition.x+25:
                 #"person moving to the right"
-                hero.move_right(x)
+                hero.move_right(x, board.size)
                 
             elif x < heroPosition.x+25:
                 #board.person.move_left(x)
-                hero.move_left(x)
+                hero.move_left(x, board.size)
             else:
                 print "person stopped"
                     
@@ -233,16 +231,23 @@ class Person (pygame.sprite.Sprite):
         self.image = self.image = pygame.image.load("girlCharacter.png").convert()
 
 
-    def move_right(self, destination):
+    def move_right(self, destination, size):
         """Move the person to the right"""
-        velocity = (destination - self.rect.x-25)/3
+        if destination > WIDTH*size-WIDTH/2:
+            velocity =0
+        else:
+            velocity = (destination - self.rect.x-WIDTH/2)/3
+            
         x = self.rect.x + velocity
         y = self.rect.y
-        self.rect = pygame.Rect(x, y, 50, 50)
+        self.rect = pygame.Rect(x, y, WIDTH, HEIGHT)
         
-    def move_left(self, destination):
+    def move_left(self, destination, size):
         """Move the person to the right"""
-        velocity = (self.rect.x+25 - destination)/3
+        if destination < WIDTH/2:
+            velocity = 0
+        else:
+            velocity = (self.rect.x+WIDTH/2 - destination)/3
         x = self.rect.x - velocity
         y = self.rect.y
         self.rect = pygame.Rect(x, y, 50, 50)

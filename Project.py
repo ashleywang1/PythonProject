@@ -1,5 +1,19 @@
 import pygame, sys, random
 
+##TODO
+""" 1) get jungle/ocean backgrounds and have those as options - will the transparency still work?
+2) get animal characters
+3) bombs would become bad food for them
+4) coins would become good food
+5) main menu - set difficulty / screen size / keep a high score sheet
+6) add levels of difficulty - making the items drop faster, more bad items
+/ changing background
+7) more animation for getting good and bad things
+8) SOUND ANIMATION
+9) not just bombs, instant death ones - also point decreasing ones
+10) pause feature - maybe? nevermind"""
+
+
 black = (0, 0, 0)
 white = (255, 255, 255)
 green = (0, 255, 0)
@@ -20,39 +34,56 @@ def new_game(size):
     #main menu
     startScreen = Board(screen.get_size())
     settings = main_menu(screen, startScreen)
-
     #the game
     main_loop(screen, board, settings)
+    
 
 def main_menu(screen, startScreen):
+    board = startScreen
+    
     background = pygame.Surface(screen.get_size())
     background.fill(white)
     screen.blit(background, (0, 0))
-
-    startScreen.Choices.draw(screen)
     
+
+    settings = []
+
+
+    #Ask for the character the user wants
+
+    #draw the menu
+    board.Choices.draw(screen)
     pygame.display.flip()
-
-    choice = None
-
+    
+    choices = [board.girl, board.boy, board.lion, board.ghost]
+    areas = [(chara.rect.x, chara.rect.y) for chara in choices]
     while True:
         event = pygame.event.wait()
         size = screen.get_size()
         if event.type == pygame.MOUSEBUTTONDOWN:
+            
             click = pygame.mouse.get_pos()
-            if click[0] > size[0]/2:
-                #the guy was chosen
-                choice = "guy"
-            else:
-                #the girl was chosen
-                choice = "girl"
+
+            for i in range (len(choices)):
+                #check x
+                if click[0] > areas[i][0] and click[0] < areas[i][0]+50:
+                    #check y
+                    if click[1] > areas[i][1] and click[1] < areas[i][1] + 50:
+                        settings.append( choices[i] )
+                        print i
                 
             print click
             event = pygame.event.wait()
             if event.type == pygame.MOUSEBUTTONUP:
                 break
 
-    return choice
+    choice = settings[0]
+
+
+    #Ask for the difficulty
+
+    
+    return settings
 
 def update_text(screen, message1, message2):
     textSize1 = 20
@@ -161,11 +192,16 @@ class Board:
 
         #The choices
         self.Choices = pygame.sprite.RenderPlain()
-        self.girl = Person(self, self.width/3, self.height/2, 50)
-        self.girl.image =  pygame.image.load("50x50girl.jpg").convert()
-        self.boy = Person(self, 2*self.width/3, self.height/2, 50)
+        self.girl = Person(self, self.width/4, self.height/3, 50)
+        self.girl.image =  pygame.image.load("girlCharacter.png").convert_alpha()
+        self.boy = Person(self, 2*self.width/4, self.height/3, 50)
         self.boy.image = pygame.image.load("50x50guy.jpg").convert()
-        self.Choices.add(self.girl, self.boy)
+        self.lion = Person(self, 3*self.width/4, self.height/3, 50)
+        self.lion.image = pygame.image.load("lion.jpg").convert()
+        self.ghost = Person(self, self.width/4, 2*self.height/3, 50)
+        self.ghost.image = pygame.image.load("halloweenGhost.jpg").convert()
+            
+        self.Choices.add(self.girl, self.boy, self.lion, self.ghost)
         
         #The player
         self.person = Person(self, self.width/2, self.height-personSize, personSize)
@@ -192,10 +228,14 @@ class Board:
         self.person.remove_lives(lives)
 
     def personalize(self, settings):
-        if settings == "girl":
-            self.person.image = self.girl.image
-        elif settings == "guy":
-            self.person.image = self.boy.image
+        #The first index of settings is the animal character
+        character = settings[0]
+
+        self.person.image = character.image
+##        if settings == "girl":
+##            self.person.image = self.girl.image
+##        elif settings == "guy":
+##            self.person.image = self.boy.image
         self.person.image.set_colorkey(white)
 
 class Item(pygame.sprite.Sprite):
@@ -233,7 +273,6 @@ class Person (pygame.sprite.Sprite):
         self.board = board
         #this needs to be changed
         self.rect = pygame.Rect(col, row, size, size)
-        print col, row
         
         self.points = 0
         self.lives = 5
@@ -275,5 +314,3 @@ class Person (pygame.sprite.Sprite):
 
 if __name__ == "__main__":
     new_game(400)
-
-    pass
