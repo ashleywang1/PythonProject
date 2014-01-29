@@ -123,7 +123,7 @@ def main_menu(screen, startScreen):
             for i in range (len(choices)):
                 #check x
                 if click[1] > lvl[i]-10 and click[1] < lvl[i]+10:
-                    settings.append(choices[i])
+                    settings.append(i * 5 + 1)
                 else:
                     continue
                 
@@ -139,22 +139,35 @@ def main_menu(screen, startScreen):
     
     return settings
 
-def update_text(screen, message1, message2):
-    textSize1 = 20
-    font1 = pygame.font.Font(None, 20)
-    text1 = font1.render(message1, True, black)
+def update_text(screen, message1, message2, message3):
+    font = pygame.font.Font(None, 20)
+    text1 = font.render(message1, True, black)
     textRect1 = text1.get_rect()
     textRect1.x = 10
     textRect1.y = 5
     screen.blit(text1, textRect1)
 
-    textSize2 = 20
-    font2 = pygame.font.Font(None, 20)
-    text2 = font2.render(message2, True, black)
+    text2 = font.render(message2, True, black)
     textRect2 = text2.get_rect()
     textRect2.x = screen.get_size()[0] - 80
     textRect2.y = 5
     screen.blit(text2, textRect2)
+
+    text3 = font.render(message3, True, black)
+    textRect3 = text3.get_rect()
+    textRect3.centerx = screen.get_size()[0] / 2
+    textRect3.centery = 10
+    screen.blit(text3, textRect3)
+
+def level_up(screen, level):
+    font = pygame.font.Font(None, 60)
+    text = font.render("Level up!", True, blue)
+    textRect = text.get_rect()
+    textX = screen.get_size()[0] / 2
+    textY = screen.get_size()[1] / 2
+    textRect.centerx = textX
+    textRect.centery = textY
+    screen.blit(text, textRect)
 
 def game_over(screen, message):
     textSize = 90
@@ -176,12 +189,15 @@ def main_loop(screen, board, settings):
         
     
     board.theHero.draw(screen)
-    update_text(screen, "Coins: " + str(board.person.points), "Lives: " + str(board.person.lives))
+    lvl = board.person.level
+    update_text(screen, "Coins: " + str(board.person.points), "Lives: " + str(board.person.lives), "Level " + str(lvl))
     pygame.display.flip()
     
     items = board.items
 
     s = 0
+    prevpts = 0
+    currpts = 0
 
     while board.person.lives > 0:
         #Erase previous images
@@ -193,7 +209,7 @@ def main_loop(screen, board, settings):
                 pygame.quit()
         board.checkHits()
         if s % 3 == 0:
-            board.makeItems(5)
+            board.makeItems(lvl)
         for i in items:
             screen.blit(background, i.pos, i.pos)
         for i in items:
@@ -222,7 +238,14 @@ def main_loop(screen, board, settings):
         else:
             print "person stopped"
         
-        update_text(screen, "Coins: " + str(board.person.points), "Lives: " + str(board.person.lives))
+        update_text(screen, "Coins: " + str(board.person.points), "Lives: " + str(board.person.lives), "Level " + str(lvl))
+        currpts = board.person.points
+        if currpts - prevpts > 19:
+            prevpts = currpts
+            board.person.level += 1
+            lvl += 1
+            level_up(screen, lvl)
+            pygame.display.flip()
         pygame.display.update()
         pygame.display.flip()
         pygame.time.delay(100)
@@ -262,11 +285,11 @@ class Board:
         self.theHero = pygame.sprite.RenderPlain()
         self.theHero.add(self.person)
 
-    def makeItems(self, prob):
+    def makeItems(self, level):
             t = green
-            if random.randint(0, prob) == prob:
+            if random.random() < 0.05 * level + 0.05:
                 t = red
-            i = Item(t, random.randint(0, self.size[0] - 28), random.randint(2, 8))
+            i = Item(t, random.randint(0, self.size[0] - 28), random.randint(0 + level, 6 + level))
             self.items.add(i)
 
     def checkHits(self):
