@@ -18,6 +18,7 @@ black = (0, 0, 0)
 white = (255, 255, 255)
 green = (0, 255, 0)
 red = (255, 0, 0)
+blue  = (0, 0, 255)
 
 types = [green, red]
 personSize = 50
@@ -45,7 +46,6 @@ def main_menu(screen, startScreen):
     background.fill(white)
     screen.blit(background, (0, 0))
     
-
     settings = []
 
 
@@ -54,9 +54,12 @@ def main_menu(screen, startScreen):
     #draw the menu
     board.Choices.draw(screen)
     pygame.display.flip()
-    
+
+    #Set up the choices
     choices = [board.girl, board.boy, board.lion, board.ghost]
     areas = [(chara.rect.x, chara.rect.y) for chara in choices]
+
+    #Wait for user input
     while True:
         event = pygame.event.wait()
         size = screen.get_size()
@@ -71,17 +74,68 @@ def main_menu(screen, startScreen):
                     if click[1] > areas[i][1] and click[1] < areas[i][1] + 50:
                         settings.append( choices[i] )
                         print i
+                    else:
+                        continue
+                else:
+                    continue
                 
             print click
             event = pygame.event.wait()
-            if event.type == pygame.MOUSEBUTTONUP:
+            if event.type == pygame.MOUSEBUTTONUP and len(settings) > 0:
                 break
-
-    choice = settings[0]
-
-
+            else:
+                continue
+            
     #Ask for the difficulty
 
+    #List the choices
+    font = pygame.font.Font(None, 50)
+    easy = font.render("Easy", True, blue)
+    medium = font.render("Medium", True, blue)
+    hard = font.render("Hard", True, blue)
+    extreme = font.render("Extreme", True, blue)
+    choices = [easy, medium, hard, extreme]
+
+    #Draw the menu
+    background.fill(white)
+    screen.blit(background, (0, 0))
+    lvl = []
+    
+    for i in range(len(choices)):
+        text = choices[i]
+        textRect = text.get_rect()
+        textRect.centerx = screen.get_size()[0]/2
+        print textRect.centerx
+        print "x"
+        textRect.centery = i*screen.get_size()[0]/len(choices) + 50
+        print textRect.centery
+        lvl.append(textRect.centery)
+        screen.blit(text, textRect)
+    pygame.display.flip()
+    
+    while True:
+        event = pygame.event.wait()
+        size = screen.get_size()
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            
+            click = pygame.mouse.get_pos()
+
+            for i in range (len(choices)):
+                #check x
+                if click[1] > lvl[i]-10 and click[1] < lvl[i]+10:
+                    settings.append(choices[i])
+                else:
+                    continue
+                
+            print click
+            event = pygame.event.wait()
+            if event.type == pygame.MOUSEBUTTONUP and len(settings) > 0:
+                break
+            else:
+                continue
+
+    print settings[0]
+    print settings[1]
     
     return settings
 
@@ -230,13 +284,11 @@ class Board:
     def personalize(self, settings):
         #The first index of settings is the animal character
         character = settings[0]
+        lvl = settings[1]
 
         self.person.image = character.image
-##        if settings == "girl":
-##            self.person.image = self.girl.image
-##        elif settings == "guy":
-##            self.person.image = self.boy.image
         self.person.image.set_colorkey(white)
+        self.person.level = lvl
 
 class Item(pygame.sprite.Sprite):
     def __init__(self, color, x, speed):
