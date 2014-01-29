@@ -6,6 +6,7 @@ green = (0, 255, 0)
 red = (255, 0, 0)
 
 types = [green, red]
+personSize = 50
 
 def new_game(size):
     pygame.init()
@@ -15,12 +16,51 @@ def new_game(size):
     pygame.display.set_caption("Items and Person")
     
     board = Board(screen.get_size())
-    main_loop(screen, board)
 
-def main_loop(screen, board):
+    #main menu
+    startScreen = Board(screen.get_size())
+    settings = main_menu(screen, startScreen)
+
+    #the game
+    main_loop(screen, board, settings)
+
+def main_menu(screen, startScreen):
     background = pygame.Surface(screen.get_size())
     background.fill(white)
     screen.blit(background, (0, 0))
+
+    startScreen.Choices.draw(screen)
+    
+    pygame.display.flip()
+
+    choice = None
+
+    while True:
+        event = pygame.event.wait()
+        size = screen.get_size()
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            click = pygame.mouse.get_pos()
+            if click[0] > size[0]/2:
+                #the guy was chosen
+                choice = "guy"
+            else:
+                #the girl was chosen
+                choice = "girl"
+                
+            print click
+            event = pygame.event.wait()
+            if event.type == pygame.MOUSEBUTTONUP:
+                break
+
+    return choice
+    
+def main_loop(screen, board, settings):
+    background = pygame.Surface(screen.get_size())
+    background.fill(white)
+    screen.blit(background, (0, 0))
+
+    board.personalize(settings)
+        
     
     board.theHero.draw(screen)
     pygame.display.flip()
@@ -72,6 +112,7 @@ def main_loop(screen, board):
         pygame.display.flip()
         pygame.time.delay(100)
         s += 1
+    
     pygame.quit()
 
     
@@ -85,8 +126,16 @@ class Board:
 
         self.items = pygame.sprite.RenderPlain()
 
-        personSize = 50
-        self.person = Person(self, self.width/2, self.height-personSize, 50)
+        #The choices
+        self.Choices = pygame.sprite.RenderPlain()
+        self.girl = Person(self, self.width/3, self.height/2, 50)
+        self.girl.image =  pygame.image.load("girlCharacter.png").convert()
+        self.boy = Person(self, 2*self.width/3, self.height/2, 50)
+        self.boy.image = pygame.image.load("50x50guy.jpg").convert_alpha()
+        self.Choices.add(self.girl, self.boy)
+        
+        #The player
+        self.person = Person(self, self.width/2, self.height-personSize, personSize)
         self.theHero = pygame.sprite.RenderPlain()
         self.theHero.add(self.person)
 
@@ -99,7 +148,12 @@ class Board:
 
     def checkHits(self):
         pygame.sprite.groupcollide(self.items, self.theHero, True, False)
-        
+
+    def personalize(self, settings):
+        if settings == "girl":
+            self.person.image = self.girl.image
+        elif settings == "guy":
+            self.person.image = self.boy.image
 
 class Item(pygame.sprite.Sprite):
     def __init__(self, color, x, speed):
@@ -135,7 +189,7 @@ class Person (pygame.sprite.Sprite):
         self.rect = pygame.Rect(col, row, size, size)
         print col, row
         
-        self.image = self.image = pygame.image.load("40x40girl.jpg").convert()
+        self.image = pygame.image.load("40x40girl.jpg").convert()
 
 
     def move_right(self, destination, size):
@@ -162,6 +216,7 @@ class Person (pygame.sprite.Sprite):
         x = self.rect.x - velocity
         y = self.rect.y
         self.rect = pygame.Rect(x, y, 50, 50)
+
  
 
 if __name__ == "__main__":
