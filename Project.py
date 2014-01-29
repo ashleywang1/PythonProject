@@ -53,6 +53,34 @@ def main_menu(screen, startScreen):
                 break
 
     return choice
+
+def update_text(screen, message1, message2):
+    textSize1 = 20
+    font1 = pygame.font.Font(None, 20)
+    text1 = font1.render(message1, True, black)
+    textRect1 = text1.get_rect()
+    textRect1.x = 10
+    textRect1.y = 5
+    screen.blit(text1, textRect1)
+
+    textSize2 = 20
+    font2 = pygame.font.Font(None, 20)
+    text2 = font2.render(message2, True, black)
+    textRect2 = text2.get_rect()
+    textRect2.x = screen.get_size()[0] - 80
+    textRect2.y = 5
+    screen.blit(text2, textRect2)
+
+def game_over(screen, message):
+    textSize = 90
+    font = pygame.font.Font(None, 90)
+    text = font.render(message, True, red)
+    textX = screen.get_size()[0] / 2
+    textY = screen.get_size()[1] / 2
+    textRect = text.get_rect()
+    textRect.centerx = textX
+    textRect.centery = textY
+    screen.blit(text, textRect)
     
 def main_loop(screen, board, settings):
     background = pygame.Surface(screen.get_size())
@@ -63,13 +91,14 @@ def main_loop(screen, board, settings):
         
     
     board.theHero.draw(screen)
+    update_text(screen, "Coins: " + str(board.person.points), "Lives: " + str(board.person.lives))
     pygame.display.flip()
     
     items = board.items
 
     s = 0
 
-    while s < 180:
+    while board.person.lives > 0:
         #Erase previous images
         screen.blit(background, (0, 0))
 
@@ -108,11 +137,15 @@ def main_loop(screen, board, settings):
         else:
             print "person stopped"
         
+        update_text(screen, "Coins: " + str(board.person.points), "Lives: " + str(board.person.lives))
         pygame.display.update()
         pygame.display.flip()
         pygame.time.delay(100)
         s += 1
-    
+
+    game_over(screen, "GAME OVER")
+    pygame.display.flip()
+    pygame.time.delay(5000)
     pygame.quit()
 
     
@@ -129,9 +162,9 @@ class Board:
         #The choices
         self.Choices = pygame.sprite.RenderPlain()
         self.girl = Person(self, self.width/3, self.height/2, 50)
-        self.girl.image =  pygame.image.load("girlCharacter.png").convert()
+        self.girl.image =  pygame.image.load("50x50girl.jpg").convert()
         self.boy = Person(self, 2*self.width/3, self.height/2, 50)
-        self.boy.image = pygame.image.load("50x50guy.jpg").convert_alpha()
+        self.boy.image = pygame.image.load("50x50guy.jpg").convert()
         self.Choices.add(self.girl, self.boy)
         
         #The player
@@ -143,17 +176,27 @@ class Board:
             t = green
             if random.randint(0, prob) == prob:
                 t = red
-            i = Item(t, random.randint(0, self.size[0] - 28), 5)
+            i = Item(t, random.randint(0, self.size[0] - 28), random.randint(2, 8))
             self.items.add(i)
 
     def checkHits(self):
-        pygame.sprite.groupcollide(self.items, self.theHero, True, False)
+        hits = pygame.sprite.spritecollide(self.person, self.items, True)
+        pts = 0
+        lives = 0
+        for i in hits:
+            if i.color == green:
+                pts += 1
+            else:
+                lives +=1
+        self.person.add_points(pts)
+        self.person.remove_lives(lives)
 
     def personalize(self, settings):
         if settings == "girl":
             self.person.image = self.girl.image
         elif settings == "guy":
             self.person.image = self.boy.image
+        self.person.image.set_colorkey(white)
 
 class Item(pygame.sprite.Sprite):
     def __init__(self, color, x, speed):
@@ -178,6 +221,9 @@ class Item(pygame.sprite.Sprite):
         if self.color == green:
             self.image = pygame.image.load("goldcoin.png").convert()
             self.image.set_colorkey(black)
+        else:
+            self.image = pygame.image.load("bomb.png").convert()
+            self.image.set_colorkey(white)
 
 class Person (pygame.sprite.Sprite):
     def __init__(self, board, col, row, size):
@@ -189,6 +235,9 @@ class Person (pygame.sprite.Sprite):
         self.rect = pygame.Rect(col, row, size, size)
         print col, row
         
+        self.points = 0
+        self.lives = 5
+
         self.image = pygame.image.load("40x40girl.jpg").convert()
 
 
@@ -217,7 +266,12 @@ class Person (pygame.sprite.Sprite):
         y = self.rect.y
         self.rect = pygame.Rect(x, y, 50, 50)
 
- 
+    def add_points(self, pts):
+        self.points += pts
+
+    def remove_lives(self, lives):
+        self.lives -= lives
+
 
 if __name__ == "__main__":
     new_game(400)
