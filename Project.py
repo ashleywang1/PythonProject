@@ -63,7 +63,9 @@ def main_menu(screen, startScreen):
     while True:
         event = pygame.event.wait()
         size = screen.get_size()
-        if event.type == pygame.MOUSEBUTTONDOWN:
+        if event.type == pygame.QUIT:
+            pygame.quit()
+        elif event.type == pygame.MOUSEBUTTONDOWN:
             
             click = pygame.mouse.get_pos()
 
@@ -159,6 +161,12 @@ def update_text(screen, message1, message2, message3):
     textRect3.centery = 10
     screen.blit(text3, textRect3)
 
+    text4 = font.render("P to pause", True, black)
+    textRect4 = text4.get_rect()
+    textRect4.centerx = screen.get_size()[0] / 2
+    textRect4.centery = 35
+    screen.blit(text4, textRect4)
+
 def level_up(screen, level):
     font = pygame.font.Font(None, 60)
     text = font.render("Level up!", True, blue)
@@ -169,18 +177,28 @@ def level_up(screen, level):
     textRect.centery = textY
     screen.blit(text, textRect)
 
-def game_over(screen, message):
-    textSize = 90
+def game_over(screen):
     font = pygame.font.Font(None, 90)
-    text = font.render(message, True, red)
+    text = font.render("GAME OVER", True, red)
     textX = screen.get_size()[0] / 2
     textY = screen.get_size()[1] / 2
     textRect = text.get_rect()
     textRect.centerx = textX
     textRect.centery = textY
     screen.blit(text, textRect)
+
+    font2 = pygame.font.Font(None, 40)
+    text2 = font2.render("New game?", True, black)
+    textX2 = screen.get_size()[0] / 2
+    textY2 = screen.get_size()[1] / 2 + 80
+    textRect2 = text2.get_rect()
+    textRect2.centerx = textX2
+    textRect2.centery = textY2
+    screen.blit(text2, textRect2)
+
+    return textRect2
     
-def main_loop(screen, board, settings):
+def main_loop(screen, board, settings):    
     background = pygame.Surface(screen.get_size())
     background.fill(white)
     screen.blit(background, (0, 0))
@@ -195,67 +213,89 @@ def main_loop(screen, board, settings):
     
     items = board.items
 
+    stop = False
+    pause = False
+
     s = 0
     prevpts = 0
     currpts = 0
 
-    while board.person.lives > 0:
-        #Erase previous images
-        screen.blit(background, (0, 0))
+    while stop == False:
+        while board.person.lives > 0:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    stop = True
+                    pygame.quit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_p:
+                        if pause == True:
+                            pause = False
+                        else:
+                            pause = True
+            if pause == False:
+                #Erase previous images
+                screen.blit(background, (0, 0))
 
-        #Draw the items
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-        board.checkHits()
-        if s % 3 == 0:
-            board.makeItems(lvl)
-        for i in items:
-            screen.blit(background, i.pos, i.pos)
-        for i in items:
-            i.move()
-            screen.blit(i.image, i.pos)
+                #Draw the items
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                board.checkHits()
+                if s % 3 == 0:
+                    board.makeItems(lvl)
+                for i in items:
+                    screen.blit(background, i.pos, i.pos)
+                for i in items:
+                    i.move()
+                    screen.blit(i.image, i.pos)
 
 
-        #Draw the person
-        board.theHero.draw(screen)
+                #Draw the person
+                board.theHero.draw(screen)
 
-        #Sense mouse position
-        mouse = pygame.mouse.get_pos()
-        x = mouse[0]
-        y = mouse[1]
+                #Sense mouse position
+                mouse = pygame.mouse.get_pos()
+                x = mouse[0]
+                y = mouse[1]
 
-        hero = board.person
-        heroPosition = hero.rect
+                hero = board.person
+                heroPosition = hero.rect
 
-        if x > heroPosition.x+25:
-            #"person moving to the right"
-            hero.move_right(x, board.width)
+                if x > heroPosition.x+25:
+                    #"person moving to the right"
+                    hero.move_right(x, board.width)
             
-        elif x < heroPosition.x+25:
-            #board.person.move_left(x)
-            hero.move_left(x, board.width)
-        else:
-            print "person stopped"
-        
-        update_text(screen, "Coins: " + str(board.person.points), "Lives: " + str(board.person.lives), "Level " + str(lvl))
-        currpts = board.person.points
-        if currpts - prevpts > 19:
-            prevpts = currpts
-            board.person.level += 1
-            lvl += 1
-            level_up(screen, lvl)
-            pygame.display.flip()
-        pygame.display.update()
+                elif x < heroPosition.x+25:
+                    #board.person.move_left(x)
+                    hero.move_left(x, board.width)
+                else:
+                    print "person stopped"
+           
+                update_text(screen, "Coins: " + str(board.person.points), "Lives: " + str(board.person.lives), "Level " + str(lvl))
+                currpts = board.person.points
+                if currpts - prevpts > 19:
+                    prevpts = currpts
+                    board.person.level += 1
+                    lvl += 1
+                    level_up(screen, lvl)
+                pygame.display.flip()
+                pygame.display.update()
+                pygame.display.flip()
+                pygame.time.delay(100)
+                s += 1
+
+        restart = game_over(screen)
         pygame.display.flip()
-        pygame.time.delay(100)
-        s += 1
-
-    game_over(screen, "GAME OVER")
-    pygame.display.flip()
-    pygame.time.delay(5000)
-    pygame.quit()
-
+        while True:
+            event = pygame.event.wait()
+            if event.type == pygame.QUIT:
+                stop = True
+                pygame.quit()
+            elif event.type == pygame.MOUSEBUTTONUP:
+                click = pygame.mouse.get_pos()
+                if click[0] > restart.x and click[0] < restart.x + 100:
+                    if click[1] > restart.y and click[1] < restart.y + 40:
+                        new_game(screen.get_size()[0])
     
 
 class Board:
@@ -270,7 +310,7 @@ class Board:
         #The choices
         self.Choices = pygame.sprite.RenderPlain()
         self.girl = Person(self, self.width/4, self.height/3, 50)
-        self.girl.image =  pygame.image.load("girlCharacter.png").convert_alpha()
+        self.girl.image =  pygame.image.load("girlCharacter.png").convert()
         self.boy = Person(self, 2*self.width/4, self.height/3, 50)
         self.boy.image = pygame.image.load("50x50guy.jpg").convert()
         self.lion = Person(self, 3*self.width/4, self.height/3, 50)
@@ -287,7 +327,7 @@ class Board:
 
     def makeItems(self, level):
             t = green
-            if random.random() < 0.05 * level + 0.05:
+            if random.random() < 0.04 * level + 0.04:
                 t = red
             i = Item(t, random.randint(0, self.size[0] - 28), random.randint(0 + level, 6 + level))
             self.items.add(i)
