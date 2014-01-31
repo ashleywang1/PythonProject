@@ -1,39 +1,36 @@
-import pygame, sys, random
+import pygame, sys, random, inputbox
 
 ##TODO
-""" 1) get jungle/ocean backgrounds and have those as options - will the transparency still work?
-2) get animal characters
-3) bombs would become bad food for them
-4) coins would become good food
+"""
 5) main menu - set difficulty / screen size / keep a high score sheet
-6) add levels of difficulty - making the items drop faster, more bad items
-/ changing background
-7) more animation for getting good and bad things
 8) SOUND ANIMATION
-9) not just bombs, instant death ones - also point decreasing ones
-10) pause feature - maybe? nevermind"""
+"""
 
-
+#Color wheel initialization
 black = (0, 0, 0)
 white = (255, 255, 255)
 green = (0, 255, 0)
 red = (255, 0, 0)
 blue  = (0, 0, 255)
 
+#Sound clip initialization
 pygame.mixer.init()
 good_sd = pygame.mixer.Sound("good.wav")
 bad_sd = pygame.mixer.Sound("bad.wav")
 
+#Game constants initialization
 personSize = 50
+PERSON_SIZE = 50
 
 def new_game(size):
-    
-    pygame.init()
 
+    #Start up the display
+    pygame.init()
     window_size = [size, size]
     screen = pygame.display.set_mode(window_size)
-    pygame.display.set_caption("Items and Person")
-    
+    pygame.display.set_caption("Keep on Swimming")
+
+    #Initialize the board
     board = Board(screen.get_size())
 
     #main menu
@@ -45,22 +42,30 @@ def new_game(size):
 
 def main_menu(screen, startScreen):
     board = startScreen
-    
+
+    #Draw a white background
     background = pygame.Surface(screen.get_size())
     background.fill(white)
     screen.blit(background, (0, 0))
-    
+
+    #Initialize the settings
     settings = []
 
-    #Ask for the character the user wants
+    """The first setting - what kind of character to play"""
 
     #draw the menu
     board.Choices.draw(screen)
+    font = pygame.font.Font(None, 30)
+    ask = font.render("Click the character you would like to play!", True, blue)
+    askRect = ask.get_rect()
+    askRect.centerx = screen.get_size()[0]/2
+    askRect.centery = screen.get_size()[0]/3
+    screen.blit(ask, askRect)
+    
     pygame.display.flip()
 
     #Set up the choices
-    #choices = [board.girl, board.boy, board.lion, board.ghost]
-    choices = [board.seal, board.shark]
+    choices = [board.seal, board.shark, board.penguin]
     areas = [(chara.rect.x, chara.rect.y) for chara in choices]
 
     #Wait for user input
@@ -90,22 +95,24 @@ def main_menu(screen, startScreen):
                 break
             else:
                 continue
-            
-    #Ask for the difficulty
 
-    #List the choices
-    font = pygame.font.Font(None, 50)
-    easy = font.render("Easy", True, blue)
-    medium = font.render("Medium", True, blue)
-    hard = font.render("Hard", True, blue)
-    extreme = font.render("Extreme", True, blue)
-    choices = [easy, medium, hard, extreme]
+    """The second setting - what difficulty to begin with"""
 
     #Draw the menu
     background.fill(white)
     screen.blit(background, (0, 0))
     lvl = []
-    
+
+    #List the choices
+    font = pygame.font.Font(None, 40)
+    difficulty = font.render("Difficulty?", True, black)
+    easy = font.render("Easy", True, blue)
+    medium = font.render("Medium", True, blue)
+    hard = font.render("Hard", True, blue)
+    extreme = font.render("Extreme", True, blue)
+    choices = [difficulty, easy, medium, hard, extreme]
+
+    #Wait for user input
     for i in range(len(choices)):
         text = choices[i]
         textRect = text.get_rect()
@@ -136,8 +143,6 @@ def main_menu(screen, startScreen):
             else:
                 continue
 
-    print settings[0]
-    print settings[1]
     
     return settings
 
@@ -177,7 +182,7 @@ def level_up(screen, level):
     textRect.centery = textY
     screen.blit(text, textRect)
 
-def game_over(screen, points):
+def game_over(screen):
     font = pygame.font.Font(None, 90)
     text = font.render("GAME OVER", True, red)
     textX = screen.get_size()[0] / 2
@@ -196,37 +201,46 @@ def game_over(screen, points):
     textRect2.centery = textY2
     screen.blit(text2, textRect2)
 
+    return textRect2
+
+
+def update_high_score(points):
+    
+    name = inputbox.main()
+    print name
     high_scores = open("highscores.txt", "a")
-    name = raw_input("Congratulations! You made it to the high score board! Please enter your name here: ")
     high_scores.write(name)
     high_scores.write(" : ")
     high_scores.write(str (points ))
     high_scores.write(" \n")
     high_scores.close()
 
-    return textRect2
-    
-def main_loop(screen, board, settings):    
+def main_loop(screen, board, settings):
+    #Initialize background
     background = pygame.Surface(screen.get_size())
     background.fill(white)
+    background = pygame.image.load("ocean.png").convert()
     screen.blit(background, (0, 0))
 
+    #Peronalize board based on user inputs from startScreen
     board.personalize(settings)
-    
+
+    #Draw the hero and initialize his level
     board.theHero.draw(screen)
     lvl = board.person.level
     update_text(screen, "Points: " + str(board.person.points), "Lives: " + str(board.person.lives), "Level " + str(lvl))
     pygame.display.flip()
-    
+
+    #Initialize the item drops on the board
     items = board.items
-
-    stop = False
-    pause = False
-
     n = 0
     s = 0
     prevpts = 0
     currpts = 0
+
+    #Initialize the game progress booleans
+    stop = False
+    pause = False
 
     while stop == False:
         while board.person.lives > 0:
@@ -296,13 +310,17 @@ def main_loop(screen, board, settings):
                 pygame.time.delay(100)
                 s += 1
 
-        restart = game_over(screen, board.person.points)
+        restart = game_over(screen)
         pygame.display.flip()
-        while True:
+        
+        stop = False
+        while not stop:
             event = pygame.event.wait()
             if event.type == pygame.QUIT:
                 stop = True
+                update_high_score(board.person.points)
                 pygame.quit()
+                
             elif event.type == pygame.MOUSEBUTTONUP:
                 click = pygame.mouse.get_pos()
                 if click[0] > restart.x and click[0] < restart.x + 100:
@@ -325,26 +343,23 @@ class Board:
 
         #The choices
         self.Choices = pygame.sprite.RenderPlain()
-        self.girl = Person(self, self.width/4, self.height/3, 50)
-        self.girl.image =  pygame.image.load("girlCharacter.png").convert()
-        self.boy = Person(self, 2*self.width/4, self.height/3, 50)
-        self.boy.image = pygame.image.load("50x50guy.jpg").convert()
         
-        self.lion = Person(self, 3*self.width/4, self.height/3, 50)
-        self.lion.image = pygame.image.load("lion.jpg").convert()
-        
-        self.seal = Person(self, self.width/4, 2*self.height/3, 50)
+        self.seal = Person(self, self.width/4-20, 2*self.height/3, 50)
         self.seal.left = pygame.image.load("seal_left.png").convert()
         self.seal.right = pygame.image.load("seal_right.png").convert()
         self.seal.image = self.seal.right
         
-        self.shark = Person(self, 2*self.width/4, 2*self.height/3, 50)
+        self.shark = Person(self, 2*self.width/4-20, 2*self.height/3, 50)
         self.shark.left = pygame.image.load("shark_left.png").convert()
         self.shark.right = pygame.image.load("shark_right.png").convert()
         self.shark.image = self.shark.right
-            
-        #self.Choices.add(self.girl, self.boy, self.lion, self.ghost, self.shark)
-        self.Choices.add(self.seal, self.shark)
+
+        self.penguin = Person(self, 3*self.width/4-20, 2*self.height/3, 50)
+        self.penguin.image = pygame.image.load("penguin.jpg").convert()
+        self.penguin.right = self.penguin.image
+        self.penguin.left = self.penguin.image
+        
+        self.Choices.add(self.seal, self.shark, self.penguin)
         
         
         #The player
@@ -396,9 +411,7 @@ class Board:
         self.person.level = lvl
 
         self.left = character.left
-        print self.left
         self.right = character.right
-        print self.right
 
 class Item(pygame.sprite.Sprite):
     def __init__(self, category, x, speed):
@@ -458,7 +471,7 @@ class Person (pygame.sprite.Sprite):
         y = self.rect.y
         self.rect = pygame.Rect(x, y, WIDTH, HEIGHT)
 
-        self.image = self.right
+        self.image = self.board.right
         
     def move_left(self, destination, size):
         """Move the person to the right"""
@@ -472,7 +485,7 @@ class Person (pygame.sprite.Sprite):
         y = self.rect.y
         self.rect = pygame.Rect(x, y, 50, 50)
 
-        self.image = self.left
+        self.image = self.board.left
 
     def change_points(self, pts):
         self.points += pts
@@ -482,4 +495,4 @@ class Person (pygame.sprite.Sprite):
 
 
 if __name__ == "__main__":
-    new_game(400)
+    new_game(500)
