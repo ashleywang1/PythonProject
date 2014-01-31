@@ -20,7 +20,10 @@ green = (0, 255, 0)
 red = (255, 0, 0)
 blue  = (0, 0, 255)
 
-types = [green, red]
+pygame.mixer.init()
+good_sd = pygame.mixer.Sound("good.wav")
+bad_sd = pygame.mixer.Sound("bad.wav")
+
 personSize = 50
 
 def new_game(size):
@@ -208,7 +211,7 @@ def main_loop(screen, board, settings):
     
     board.theHero.draw(screen)
     lvl = board.person.level
-    update_text(screen, "Coins: " + str(board.person.points), "Lives: " + str(board.person.lives), "Level " + str(lvl))
+    update_text(screen, "Points: " + str(board.person.points), "Lives: " + str(board.person.lives), "Level " + str(lvl))
     pygame.display.flip()
     
     items = board.items
@@ -240,6 +243,7 @@ def main_loop(screen, board, settings):
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         pygame.quit()
+                
                 board.checkHits()
                 if s % 3 == 0:
                     board.makeItems(lvl)
@@ -271,7 +275,7 @@ def main_loop(screen, board, settings):
                 else:
                     print "person stopped"
            
-                update_text(screen, "Coins: " + str(board.person.points), "Lives: " + str(board.person.lives), "Level " + str(lvl))
+                update_text(screen, "Points: " + str(board.person.points), "Lives: " + str(board.person.lives), "Level " + str(lvl))
                 currpts = board.person.points
                 if currpts - prevpts > 19:
                     prevpts = currpts
@@ -326,10 +330,15 @@ class Board:
         self.theHero.add(self.person)
 
     def makeItems(self, level):
-            t = green
-            if random.random() < 0.04 * level + 0.04:
-                t = red
-            i = Item(t, random.randint(0, self.size[0] - 28), random.randint(0 + level, 6 + level))
+            t = "good"
+            r = random.random()
+            cutoff = 0.04 * level + 0.04
+            if r < cutoff:
+                if r > cutoff * level / (level + 1):
+                    t = "bad"
+                else:
+                    t = "kill"
+            i = Item(t, random.randint(0, self.size[0] - 32), random.randint(0 + level, 6 + level))
             self.items.add(i)
 
     def checkHits(self):
@@ -337,8 +346,12 @@ class Board:
         pts = 0
         lives = 0
         for i in hits:
-            if i.color == green:
+            if i.category == "good":
                 pts += 1
+                good_sd.play()
+            elif i.category == "bad":
+                pts -= 1
+                bad_sd.play(1)
             else:
                 lives +=1
         self.person.add_points(pts)
@@ -354,31 +367,31 @@ class Board:
         self.person.level = lvl
 
 class Item(pygame.sprite.Sprite):
-    def __init__(self, color, x, speed):
+    def __init__(self, category, x, speed):
         pygame.sprite.Sprite.__init__(self)
         
-        self.image = pygame.Surface([28, 28])
-        self.image.fill(color)
-        
-        self.color = color    #green is good, red is bad
+        self.category = category
+        self.set_pic()
         self.x = x
         self.speed = speed
         self.pos = self.image.get_rect().move(x, 0)
         self.rect = self.pos
-
-        self.set_pic()
 
     def move(self):
         self.pos = self.pos.move(0, self.speed)
         self.rect = self.pos
 
     def set_pic(self):
-        if self.color == green:
-            self.image = pygame.image.load("goldcoin.png").convert()
-            self.image.set_colorkey(black)
+        if self.category == "good":
+            if random.random() < 0.5:
+                self.image = pygame.image.load("orangefish.png").convert()
+            else:
+                self.image = pygame.image.load("greenfish.png").convert()
+        elif self.category == "bad":
+            self.image = pygame.image.load("plastic.png").convert()
         else:
-            self.image = pygame.image.load("bomb.png").convert()
-            self.image.set_colorkey(white)
+            self.image = pygame.image.load("net.png").convert()
+        self.image.set_colorkey(white)
 
 class Person (pygame.sprite.Sprite):
     def __init__(self, board, col, row, size):
