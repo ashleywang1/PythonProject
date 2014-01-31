@@ -2,7 +2,7 @@ import pygame, sys, random, inputbox
 
 ##TODO
 """
-5) main menu - set difficulty / screen size / keep a high score sheet
+5) main menu - screen size / keep a high score sheet
 8) SOUND ANIMATION
 """
 
@@ -15,14 +15,19 @@ blue  = (0, 0, 255)
 
 #Sound clip initialization
 pygame.mixer.init()
+lvl_up_sd = pygame.mixer.Sound("lvlUp.wav")
 good_sd = pygame.mixer.Sound("good.wav")
 bad_sd = pygame.mixer.Sound("bad.wav")
+very_bad_sd = pygame.mixer.Sound("veryBad.wav")
 
 #Game constants initialization
 personSize = 50
 PERSON_SIZE = 50
+WIDTH = 50
+HEIGHT = 50
 
 def new_game(size):
+    """Start a new game"""
 
     #Start up the display
     pygame.init()
@@ -41,6 +46,8 @@ def new_game(size):
     
 
 def main_menu(screen, startScreen):
+    """Ask for some user inputs to personalize the game"""
+
     board = startScreen
 
     #Draw a white background
@@ -135,15 +142,13 @@ def main_menu(screen, startScreen):
                     settings.append(i * 5 + 1)
                 else:
                     continue
-                
-            print click
+            
             event = pygame.event.wait()
             if event.type == pygame.MOUSEBUTTONUP and len(settings) > 1:
                 break
             else:
                 continue
 
-    
     return settings
 
 def update_text(screen, message1, message2, message3):
@@ -181,6 +186,9 @@ def level_up(screen, level):
     textRect.centerx = textX
     textRect.centery = textY
     screen.blit(text, textRect)
+    
+    lvl_up_sd.play()
+    print "level up sound played"
 
 def game_over(screen):
     font = pygame.font.Font(None, 90)
@@ -203,11 +211,13 @@ def game_over(screen):
 
     return textRect2
 
-
 def update_high_score(points):
+    high_scores = open("highscores.txt", "r")
+    for line in high_scores.readlines():
+        print line
     
     name = inputbox.main()
-    print name
+    print name + " : " + str(points)
     high_scores = open("highscores.txt", "a")
     high_scores.write(name)
     high_scores.write(" : ")
@@ -242,6 +252,7 @@ def main_loop(screen, board, settings):
     stop = False
     pause = False
 
+    
     while stop == False:
         while board.person.lives > 0:
             for event in pygame.event.get():
@@ -280,20 +291,19 @@ def main_loop(screen, board, settings):
                 mouse = pygame.mouse.get_pos()
                 x = mouse[0]
                 y = mouse[1]
-
                 hero = board.person
                 heroPosition = hero.rect
 
+                #Hero responds to mouse position
                 if x > heroPosition.x+25:
-                    #"person moving to the right"
                     hero.move_right(x, board.width)
             
                 elif x < heroPosition.x+25:
-                    #board.person.move_left(x)
                     hero.move_left(x, board.width)
                 else:
-                    print "person stopped"
-           
+                    pass
+
+                #Update the results of the action
                 update_text(screen, "Points: " + str(board.person.points), "Lives: " + str(board.person.lives), "Level " + str(lvl))
                 currpts = board.person.points
                 if currpts - prevpts > 9:
@@ -304,20 +314,23 @@ def main_loop(screen, board, settings):
                 if n % 4 != 0:
                     level_up(screen, lvl)
                     n += 1
-                pygame.display.flip()
-                pygame.display.update()
+
+                #Update the screen
                 pygame.display.flip()
                 pygame.time.delay(100)
                 s += 1
 
+        #If the person runs out of lives
         restart = game_over(screen)
         pygame.display.flip()
-        
+
+        #New game or quit?
         stop = False
         while not stop:
             event = pygame.event.wait()
             if event.type == pygame.QUIT:
                 stop = True
+                #Update high score
                 update_high_score(board.person.points)
                 pygame.quit()
                 
@@ -334,7 +347,6 @@ class Board:
         self.size = size
         self.width = size[0]
         self.height = size[1]
-
         self.items = pygame.sprite.RenderPlain()
 
         #Right and left
@@ -361,7 +373,6 @@ class Board:
         
         self.Choices.add(self.seal, self.shark, self.penguin)
         
-        
         #The player
         self.person = Person(self, self.width/2, self.height-personSize, personSize)
         self.theHero = pygame.sprite.RenderPlain()
@@ -384,7 +395,10 @@ class Board:
                     self.items.add(i)
 
     def checkHits(self):
+        #Check for collisions
         hits = pygame.sprite.spritecollide(self.person, self.items, True)
+
+        #Count the effects of those collisions
         pts = 0
         lives = 0
         for i in hits:
@@ -393,30 +407,35 @@ class Board:
                 good_sd.play()
             elif i.category == "better":
                 lives += 1
+                good_sd.play()
             elif i.category == "bad":
                 pts -= 1
                 bad_sd.play(1)
             else:
                 lives -= 1
+                bad_sd.play(1)
+
+        #Update the player's lives and points
         self.person.change_points(pts)
         self.person.change_lives(lives)
 
     def personalize(self, settings):
-        #The first index of settings is the animal character
+        #Set the person's character and level
         character = settings[0]
         lvl = settings[1]
 
         self.person.image = character.image
-        self.person.image.set_colorkey(white)
-        self.person.level = lvl
-
+        self.person.image.set_colorkey(white) #This will make the image transparent
         self.left = character.left
         self.right = character.right
+
+        self.person.level = lvl
 
 class Item(pygame.sprite.Sprite):
     def __init__(self, category, x, speed):
         pygame.sprite.Sprite.__init__(self)
-        
+
+        #Initialize item attributes
         self.category = category
         self.set_pic()
         self.x = x
@@ -429,6 +448,7 @@ class Item(pygame.sprite.Sprite):
         self.rect = self.pos
 
     def set_pic(self):
+        #Randomly spawn good and bad items
         if self.category == "good":
             if random.random() < 0.5:
                 self.image = pygame.image.load("orangefish.png").convert()
@@ -440,28 +460,31 @@ class Item(pygame.sprite.Sprite):
             self.image = pygame.image.load("plastic.png").convert()
         else:
             self.image = pygame.image.load("net.png").convert()
+            
         self.image.set_colorkey(white)
 
 class Person (pygame.sprite.Sprite):
     def __init__(self, board, col, row, size):
         pygame.sprite.Sprite.__init__(self)
+
+        #Initialize the surface
         self.col = col
         self.row = row
         self.board = board
         self.rect = pygame.Rect(col, row, size, size)
-        
+
+        #Initialize the person's attributes
         self.points = 0
         self.lives = 5
 
-        self.image = pygame.image.load("40x40girl.jpg").convert()
+        #Initialize the person's image
+        self.image = pygame.image.load("seal_left.png").convert()
         self.right = board.right
         self.left = board.left
 
 
     def move_right(self, destination, size):
         """Move the person to the right"""
-        WIDTH = 50
-        HEIGHT = 50
         if destination > WIDTH*size-WIDTH/2:
             velocity =0
         else:
@@ -471,20 +494,21 @@ class Person (pygame.sprite.Sprite):
         y = self.rect.y
         self.rect = pygame.Rect(x, y, WIDTH, HEIGHT)
 
+        #Flip the image so the character faces the direction of movement
         self.image = self.board.right
         
     def move_left(self, destination, size):
         """Move the person to the right"""
-        WIDTH = 50
-        HEIGHT = 50
         if destination < WIDTH/2:
             velocity = 0
         else:
             velocity = (self.rect.x+WIDTH/2 - destination)/3
+            
         x = self.rect.x - velocity
         y = self.rect.y
         self.rect = pygame.Rect(x, y, 50, 50)
 
+        #Flip the image so the character faces the direction of movement
         self.image = self.board.left
 
     def change_points(self, pts):

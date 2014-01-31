@@ -1,11 +1,13 @@
 ashley : 0 
 ash : 13 
 ashley wang : 14 
-d : 9 
-f : 8 
-d : 2 
-dd : 1 
-ddd : 2 
 ashley : 1 
-as : 5 
-d : 0 
+ashley wang : -2 
+ahsley : 1 
+ash : 0 
+sarah : 9 
+meah : 0 
+beast : 27 
+mea : 2 
+j : 14 
+;9 : 17 

@@ -30,11 +30,13 @@ def display_box(screen, message):
   highscore = pygame.font.Font(None, 20)
   pygame.draw.rect(screen, (0,0,0),
                    ((screen.get_width() / 2) - 100,
-                    (screen.get_height() / 3) - 10,
+                    (screen.get_height() / 4) - 10,
                     200,20), 0)
 
-  screen.blit(highscore.render("High Score!", 1, (255,255,255)),
-                ((screen.get_width() / 2) - 100, (screen.get_height() / 2) - 10) )
+  screen.blit(highscore.render("You Got a High Score!", 1, (255,255,255)),
+                ((screen.get_width() / 2) - 100, (screen.get_height() / 4) - 10) )
+
+  pygame.display.flip()
   
   fontobject = pygame.font.Font(None,18)
   pygame.draw.rect(screen, (0,0,0),
