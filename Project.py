@@ -219,6 +219,7 @@ def main_loop(screen, board, settings):
     stop = False
     pause = False
 
+    n = 0
     s = 0
     prevpts = 0
     currpts = 0
@@ -277,11 +278,14 @@ def main_loop(screen, board, settings):
            
                 update_text(screen, "Points: " + str(board.person.points), "Lives: " + str(board.person.lives), "Level " + str(lvl))
                 currpts = board.person.points
-                if currpts - prevpts > 19:
+                if currpts - prevpts > 9:
                     prevpts = currpts
                     board.person.level += 1
                     lvl += 1
+                    n += 1
+                if n % 4 != 0:
                     level_up(screen, lvl)
+                    n += 1
                 pygame.display.flip()
                 pygame.display.update()
                 pygame.display.flip()
@@ -340,6 +344,10 @@ class Board:
                     t = "kill"
             i = Item(t, random.randint(0, self.size[0] - 32), random.randint(0 + level, 6 + level))
             self.items.add(i)
+            if self.person.lives < 3:
+                if random.random() < 0.05:
+                    i = Item("better", random.randint(0, self.size[0] - 32), random.randint(0 + level, 6 + level))
+                    self.items.add(i)
 
     def checkHits(self):
         hits = pygame.sprite.spritecollide(self.person, self.items, True)
@@ -349,13 +357,15 @@ class Board:
             if i.category == "good":
                 pts += 1
                 good_sd.play()
+            elif i.category == "better":
+                lives += 1
             elif i.category == "bad":
                 pts -= 1
                 bad_sd.play(1)
             else:
-                lives +=1
-        self.person.add_points(pts)
-        self.person.remove_lives(lives)
+                lives -= 1
+        self.person.change_points(pts)
+        self.person.change_lives(lives)
 
     def personalize(self, settings):
         #The first index of settings is the animal character
@@ -387,6 +397,8 @@ class Item(pygame.sprite.Sprite):
                 self.image = pygame.image.load("orangefish.png").convert()
             else:
                 self.image = pygame.image.load("greenfish.png").convert()
+        elif self.category == "better":
+            self.image = pygame.image.load("bubble.png").convert()
         elif self.category == "bad":
             self.image = pygame.image.load("plastic.png").convert()
         else:
@@ -433,11 +445,11 @@ class Person (pygame.sprite.Sprite):
         y = self.rect.y
         self.rect = pygame.Rect(x, y, 50, 50)
 
-    def add_points(self, pts):
+    def change_points(self, pts):
         self.points += pts
 
-    def remove_lives(self, lives):
-        self.lives -= lives
+    def change_lives(self, lives):
+        self.lives += lives
 
 
 if __name__ == "__main__":
