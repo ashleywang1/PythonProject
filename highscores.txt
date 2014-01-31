@@ -11,3 +11,5 @@ beast : 27
 mea : 2 
 j : 14 
 ;9 : 17 
+ahhh : 16 
+yaay : 2 

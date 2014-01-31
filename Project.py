@@ -15,10 +15,11 @@ blue  = (0, 0, 255)
 
 #Sound clip initialization
 pygame.mixer.init()
-lvl_up_sd = pygame.mixer.Sound("lvlUp.wav")
+lvl_up_sd = pygame.mixer.Sound("levelup.wav")
 good_sd = pygame.mixer.Sound("good.wav")
 bad_sd = pygame.mixer.Sound("bad.wav")
 very_bad_sd = pygame.mixer.Sound("veryBad.wav")
+game_over_sd = pygame.mixer.Sound("gameOver.wav")
 
 #Game constants initialization
 personSize = 50
@@ -209,6 +210,8 @@ def game_over(screen):
     textRect2.centery = textY2
     screen.blit(text2, textRect2)
 
+    game_over_sd.play()
+
     return textRect2
 
 def update_high_score(points):
@@ -275,6 +278,7 @@ def main_loop(screen, board, settings):
                         pygame.quit()
                 
                 board.checkHits()
+                
                 if s % 3 == 0:
                     board.makeItems(lvl)
                 for i in items:
@@ -313,6 +317,7 @@ def main_loop(screen, board, settings):
                     n += 1
                 if n % 4 != 0:
                     level_up(screen, lvl)
+                    good_sd.play()
                     n += 1
 
                 #Update the screen
