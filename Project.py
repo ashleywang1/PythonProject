@@ -27,6 +27,7 @@ bad_sd = pygame.mixer.Sound("bad.wav")
 personSize = 50
 
 def new_game(size):
+    
     pygame.init()
 
     window_size = [size, size]
@@ -51,7 +52,6 @@ def main_menu(screen, startScreen):
     
     settings = []
 
-
     #Ask for the character the user wants
 
     #draw the menu
@@ -59,7 +59,8 @@ def main_menu(screen, startScreen):
     pygame.display.flip()
 
     #Set up the choices
-    choices = [board.girl, board.boy, board.lion, board.ghost]
+    #choices = [board.girl, board.boy, board.lion, board.ghost]
+    choices = [board.seal, board.shark]
     areas = [(chara.rect.x, chara.rect.y) for chara in choices]
 
     #Wait for user input
@@ -78,13 +79,12 @@ def main_menu(screen, startScreen):
                     #check y
                     if click[1] > areas[i][1] and click[1] < areas[i][1] + 50:
                         settings.append( choices[i] )
-                        print i
+                        
                     else:
                         continue
                 else:
                     continue
-                
-            print click
+            
             event = pygame.event.wait()
             if event.type == pygame.MOUSEBUTTONUP and len(settings) > 0:
                 break
@@ -110,10 +110,7 @@ def main_menu(screen, startScreen):
         text = choices[i]
         textRect = text.get_rect()
         textRect.centerx = screen.get_size()[0]/2
-        print textRect.centerx
-        print "x"
         textRect.centery = i*screen.get_size()[0]/len(choices) + 50
-        print textRect.centery
         lvl.append(textRect.centery)
         screen.blit(text, textRect)
     pygame.display.flip()
@@ -134,7 +131,7 @@ def main_menu(screen, startScreen):
                 
             print click
             event = pygame.event.wait()
-            if event.type == pygame.MOUSEBUTTONUP and len(settings) > 0:
+            if event.type == pygame.MOUSEBUTTONUP and len(settings) > 1:
                 break
             else:
                 continue
@@ -180,7 +177,7 @@ def level_up(screen, level):
     textRect.centery = textY
     screen.blit(text, textRect)
 
-def game_over(screen):
+def game_over(screen, points):
     font = pygame.font.Font(None, 90)
     text = font.render("GAME OVER", True, red)
     textX = screen.get_size()[0] / 2
@@ -199,6 +196,14 @@ def game_over(screen):
     textRect2.centery = textY2
     screen.blit(text2, textRect2)
 
+    high_scores = open("highscores.txt", "a")
+    name = raw_input("Congratulations! You made it to the high score board! Please enter your name here: ")
+    high_scores.write(name)
+    high_scores.write(" : ")
+    high_scores.write(str (points ))
+    high_scores.write(" \n")
+    high_scores.close()
+
     return textRect2
     
 def main_loop(screen, board, settings):    
@@ -207,7 +212,6 @@ def main_loop(screen, board, settings):
     screen.blit(background, (0, 0))
 
     board.personalize(settings)
-        
     
     board.theHero.draw(screen)
     lvl = board.person.level
@@ -292,7 +296,7 @@ def main_loop(screen, board, settings):
                 pygame.time.delay(100)
                 s += 1
 
-        restart = game_over(screen)
+        restart = game_over(screen, board.person.points)
         pygame.display.flip()
         while True:
             event = pygame.event.wait()
@@ -315,18 +319,33 @@ class Board:
 
         self.items = pygame.sprite.RenderPlain()
 
+        #Right and left
+        self.left = pygame.image.load("shark_left.png").convert()
+        self.right = pygame.image.load("shark_right.png").convert()
+
         #The choices
         self.Choices = pygame.sprite.RenderPlain()
         self.girl = Person(self, self.width/4, self.height/3, 50)
         self.girl.image =  pygame.image.load("girlCharacter.png").convert()
         self.boy = Person(self, 2*self.width/4, self.height/3, 50)
         self.boy.image = pygame.image.load("50x50guy.jpg").convert()
+        
         self.lion = Person(self, 3*self.width/4, self.height/3, 50)
         self.lion.image = pygame.image.load("lion.jpg").convert()
-        self.ghost = Person(self, self.width/4, 2*self.height/3, 50)
-        self.ghost.image = pygame.image.load("halloweenGhost.jpg").convert()
+        
+        self.seal = Person(self, self.width/4, 2*self.height/3, 50)
+        self.seal.left = pygame.image.load("seal_left.png").convert()
+        self.seal.right = pygame.image.load("seal_right.png").convert()
+        self.seal.image = self.seal.right
+        
+        self.shark = Person(self, 2*self.width/4, 2*self.height/3, 50)
+        self.shark.left = pygame.image.load("shark_left.png").convert()
+        self.shark.right = pygame.image.load("shark_right.png").convert()
+        self.shark.image = self.shark.right
             
-        self.Choices.add(self.girl, self.boy, self.lion, self.ghost)
+        #self.Choices.add(self.girl, self.boy, self.lion, self.ghost, self.shark)
+        self.Choices.add(self.seal, self.shark)
+        
         
         #The player
         self.person = Person(self, self.width/2, self.height-personSize, personSize)
@@ -376,6 +395,11 @@ class Board:
         self.person.image.set_colorkey(white)
         self.person.level = lvl
 
+        self.left = character.left
+        print self.left
+        self.right = character.right
+        print self.right
+
 class Item(pygame.sprite.Sprite):
     def __init__(self, category, x, speed):
         pygame.sprite.Sprite.__init__(self)
@@ -411,13 +435,14 @@ class Person (pygame.sprite.Sprite):
         self.col = col
         self.row = row
         self.board = board
-        #this needs to be changed
         self.rect = pygame.Rect(col, row, size, size)
         
         self.points = 0
         self.lives = 5
 
         self.image = pygame.image.load("40x40girl.jpg").convert()
+        self.right = board.right
+        self.left = board.left
 
 
     def move_right(self, destination, size):
@@ -432,6 +457,8 @@ class Person (pygame.sprite.Sprite):
         x = self.rect.x + velocity
         y = self.rect.y
         self.rect = pygame.Rect(x, y, WIDTH, HEIGHT)
+
+        self.image = self.right
         
     def move_left(self, destination, size):
         """Move the person to the right"""
@@ -444,6 +471,8 @@ class Person (pygame.sprite.Sprite):
         x = self.rect.x - velocity
         y = self.rect.y
         self.rect = pygame.Rect(x, y, 50, 50)
+
+        self.image = self.left
 
     def change_points(self, pts):
         self.points += pts
